@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { db } from "@vercel/postgres";
 import { invoices, customers, revenue, users } from "../lib/placeholder-data";
+import { NextResponse } from "next/server";
 
 const client = await db.connect();
 
@@ -99,4 +100,18 @@ async function seedRevenue() {
   );
 
   return insertedRevenue;
+}
+export async function GET() {
+  try {
+    await client.sql`BEGIN`;
+    await seedUsers();
+    await seedCustomers();
+    await seedInvoices();
+    await seedRevenue();
+    await client.sql`COMMIT`;
+    return Response.json({ message: "Database seeded successfully" });
+  } catch (error) {
+    await client.sql`ROLLBACK`;
+    return Response.json({ error }, { status: 500 });
+  }
 }
